@@ -1,0 +1,24 @@
+# syntax=docker/dockerfile:1
+# Dockerfile for FedScale Aggregator
+
+FROM python:3.7-buster
+
+WORKDIR /FedScale
+
+# COPY context/...(source) WORKDIR/...(dest)
+COPY docker/install-docker.sh install.sh
+
+COPY environment.yml environment.yml
+
+# RUN opens a process in WORKDIR
+# RUN /bin/bash -c 'df -h .'
+RUN /bin/bash -c 'chmod +x install.sh; ./install.sh'
+
+# COPY all source files execept ignored by .dockerignore
+COPY . .
+
+# Setup fedscale package
+RUN /bin/bash -c 'pip install -e .'
+
+# $HOME is just root
+# RUN echo $HOME
