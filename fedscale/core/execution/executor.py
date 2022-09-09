@@ -5,6 +5,7 @@ import pickle
 from argparse import Namespace
 
 import torch
+from fedscale.core.aggregation.aggregator import CONTAINER_PORT
 
 import fedscale.core.channels.job_api_pb2 as job_api_pb2
 from fedscale.core import commons
@@ -14,6 +15,8 @@ from fedscale.core.execution.data_processor import collate, voice_collate_fn
 from fedscale.core.execution.rlclient import RLClient
 from fedscale.core.logger.execution import *
 
+CONTAINER_IP = "0.0.0.0"
+CONTAINER_PORT = 32000
 
 class Executor(object):
     """Abstract class for FedScale executor.
@@ -448,7 +451,51 @@ class Executor(object):
                 time.sleep(1)
                 self.client_ping()
 
+def exec_container_init():
+    """ Initialization needed if executor is running inside a container
+    """
+    # This is almost like aggr_container_init(), uniquely defined here to allow for future executor-specific init
+    listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listen_socket.bind((CONTAINER_IP, CONTAINER_PORT))
+    listen_socket.settimeout(1)
+    listen_socket.listen(5)
+    logging.info("Executor waiting to initialize")
+    while True:
+        # avoid busy waiting
+        time.sleep(0.1)
+        try:
+            incoming_socket, addr = listen_socket.accept()
+        except socket.timeout:
+            continue
+        message_chunks = []
+        while True:
+            time.sleep(0.1)
+            try:
+                msg = incoming_socket.recv(4096)
+            except socket.timeout:
+                continue
+            if not msg:
+                break
+            message_chunks.append(msg)
+        message_bytes = b''.join(message_chunks)
+        message_str = message_bytes.decode('utf-8')
+        incoming_socket.close()
+        try:
+            msg = json.loads(message_str)
+        except json.JSONDecodeError:
+            logging.info("Error decoding init message!")
+            listen_socket.close()
+            exit(1)
+        if msg['type'] == 'initialize':
+            logging.info("Executor init success!")
+            args = commons.Config(msg['data'])
+            print(args)
+            listen_socket.close()
+            return args
+
 
 if __name__ == "__main__":
+    if args.use_container == True:
+        args = exec_container_init()
     executor = Executor(args)
     executor.run()

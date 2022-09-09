@@ -18,7 +18,15 @@ RUN /bin/bash -c 'chmod +x install.sh; ./install.sh'
 COPY . .
 
 # Setup fedscale package
-RUN /bin/bash -c 'pip install -e .'
+# RUN /bin/bash -c 'pip install -e .'
+
+# Run aggregator
+# RUN /bin/bash -c 'conda activate fedscale; python3 fedscale/core/aggregation/aggregator.py'
+RUN /bin/bash -c 'chmod +x ./docker/run-aggr.sh'
+ENV PATH="${PATH}:/root/anaconda3/bin:/root/anaconda3/condabin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+CMD ["/bin/bash", "-c", "./docker/run-aggr.sh"]
+# CMD ["/bin/sh", "-c", "conda", "run", "-n", "fedscale", "--no-capture-output", "python3", "fedscale/core/aggregation/aggregator.py"]
 
 # $HOME is just root
 # RUN echo $HOME

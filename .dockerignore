@@ -1,7 +1,8 @@
 # Files to ignore when building docker image
 *.log
 logs/
-./benchmark/dataset/data/*
+./benchmark
 .DS_Store
 *.egg-info
 *logging
+./docker/Dockerfile*

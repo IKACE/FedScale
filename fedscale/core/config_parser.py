@@ -28,6 +28,9 @@ parser.add_argument('--task', type=str, default='cv')
 parser.add_argument('--device_avail_file', type=str, default=None)
 parser.add_argument('--clock_factor', type=float, default=1.0,
                     help="Refactor the clock time given the profile")
+parser.add_argument('--use_container', action="store_true",
+                    help="Whether or not to start aggregator/executor as containers")
+parser.set_defaults(use_container=False)
 
 # The configuration of model and dataset
 parser.add_argument('--model_zoo', type=str, default='torchcv',
