@@ -1,5 +1,5 @@
 #!/bin/bash
-# install-docker.sh for docker image build
+# install-docker.sh used for docker image build
 FEDSCALE_HOME=/FedScale
 echo export FEDSCALE_HOME=/FedScale >> ~/.bashrc
 echo alias fedscale=\'bash ${FEDSCALE_HOME}/fedscale.sh\' >> ~/.bashrc
