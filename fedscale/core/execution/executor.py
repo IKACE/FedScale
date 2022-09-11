@@ -5,7 +5,6 @@ import pickle
 from argparse import Namespace
 
 import torch
-from fedscale.core.aggregation.aggregator import CONTAINER_PORT
 
 import fedscale.core.channels.job_api_pb2 as job_api_pb2
 from fedscale.core import commons
@@ -14,6 +13,7 @@ from fedscale.core.execution.client import Client
 from fedscale.core.execution.data_processor import collate, voice_collate_fn
 from fedscale.core.execution.rlclient import RLClient
 from fedscale.core.logger.execution import *
+import fedscale.core.config_parser as parser
 
 CONTAINER_IP = "0.0.0.0"
 CONTAINER_PORT = 32000
@@ -488,14 +488,24 @@ def exec_container_init():
             exit(1)
         if msg['type'] == 'initialize':
             logging.info("Executor init success!")
-            args = commons.Config(msg['data'])
-            print(args)
+            new_args = msg['data']
+            # print(args)
             listen_socket.close()
-            return args
+            return new_args
 
 
 if __name__ == "__main__":
-    if args.use_container == True:
-        args = exec_container_init()
-    executor = Executor(args)
+    if parser.args.use_container == True:
+        new_args = exec_container_init()
+        # Update arguments globally
+        for key in new_args:
+            args_dict = vars(parser.args)
+            assert(key in args_dict)
+            args_dict[key] = new_args[key]
+    # print("executor args", args)
+    # config =   {"adam_epsilon": 1e-8, "arrival_interval": 3, "async_buffer": 10, "async_mode": False, "backbone": './resnet50.pth', "backend": 'gloo', "batch_size": 20, "bidirectional": True, "blacklist_max_len": 0.3, "blacklist_rounds": -1, "block_size": 64, "cfg_file": './utils/rcnn/cfgs/res101.yml', "checkin_period": 50, "clf_block_size": 32, "clip_bound": 0.9, "clip_threshold": 3.0, "clock_factor": 1.1624548736462095, "conf_path": '~/dataset/', "connection_timeout": 60, "cuda_device": None, "cut_off_util": 0.05, "data_cache": '', "data_dir": '/users/yilegu/fedscale_k8s/FedScale/benchmark/dataset/data/femnist', "data_map_file": '/users/yilegu/fedscale_k8s/FedScale/benchmark/dataset/data/femnist/client_data_mapping/train.csv', "data_set": 'femnist', "decay_factor": 0.98, "decay_round": 10, "device_avail_file": '/users/yilegu/fedscale_k8s/FedScale/benchmark/dataset/data/device_info/client_behave_trace', "device_conf_file": '/users/yilegu/fedscale_k8s/FedScale/benchmark/dataset/data/device_info/client_device_capacity', "dump_epoch": 10000000000.0, "embedding_file": 'glove.840B.300d.txt', "engine": 'pytorch', "epsilon": 0.9, "eval_interval": 30, "executor_configs": 'localhost:[1]', "experiment_mode": 'simulation', "exploration_alpha": 0.3, "exploration_decay": 0.98, "exploration_factor": 0.9, "exploration_min": 0.3, "filter_less": 21, "filter_more": 1000000000000000.0, "finetune": False, "gamma": 0.9, "gradient_policy": 'yogi', "hidden_layers": 7, "hidden_size": 256, "input_dim": 0, "job_name": 'femnist', "labels_path": 'labels.json', "learning_rate": 0.05, "line_by_line": False, "local_steps": 20, "log_path": '/users/yilegu/fedscale_k8s/FedScale/aggr_log', "loss_decay": 0.2, "malicious_factor": 4, "memory_capacity": 2000, "min_learning_rate":5e-05, "mlm": False, "mlm_probability":0.15, "model": 'shufflenet_v2_x2_0', "model_size": 65536, "model_zoo":'torchcv', "n_actions":2, "n_states": 4, "noise_dir": None, "noise_factor": 0.1, "noise_max": 0.5, "noise_min": 0.0, "noise_prob": 0.4, "num_class": 62, "num_classes": 35, "num_executors": 1, "num_loaders": 2, "num_participants": 5, "output_dim": 0, "overcommitment": 1.3, "overwrite_cache": False, "pacer_delta": 5, "pacer_step": 20, "proxy_mu": 0.1, "ps_ip": 'localhost', "ps_port": '29501', "rnn_type": 'lstm', "round_penalty": 2.0, "round_threshold": 30, "rounds": 500, "sample_mode": 'random', "sample_rate": 16000, "sample_seed": 233, "sample_window": 5.0, "spec_augment": False, "speed_volume_perturb": False, "target_delta": 0.0001, "target_replace_iter": 15, "task": 'cv', "test_bsz": 20, "test_manifest": 'data/test_manifest.csv', "test_output_dir": './logs/server', "test_ratio": 1.0, "test_size_file": '', "this_rank": 1, 
+    # "time_stamp": '0909_000000', "train_manifest": 'data/train_manifest.csv', "train_size_file": '', "train_uniform": False, "upload_step": 20, "use_cuda": False, "vocab_tag_size": 500, "vocab_token_size": 10000, "weight_decay": 0, "window": 'hamming', "window_size": 0.02, "window_stride": 0.01, "yogi_beta": 0.9, "yogi_beta2": 0.99, "yogi_eta": 0.003, "yogi_tau": 1e-08}
+    # args = commons.Config(config)
+    print(vars(parser.args))
+    executor = Executor(parser.args)
     executor.run()

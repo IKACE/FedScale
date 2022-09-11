@@ -18,8 +18,3 @@ UPLOAD_MODEL = 'upload_model'
 # PLACEHOLD
 DUMMY_RESPONSE = 'N'
 
-
-class Config(object):
-    def __init__(self, initial_data):
-        for key in initial_data:
-            setattr(self, key, initial_data[key])

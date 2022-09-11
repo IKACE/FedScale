@@ -2,9 +2,10 @@
 import os
 
 from fedscale.core.fllibs import *
+import fedscale.core.config_parser as parser
 
-logDir = os.path.join(args.log_path, "logs", args.job_name,
-                      args.time_stamp, 'executor')
+logDir = os.path.join(parser.args.log_path, "logs", parser.args.job_name,
+                      parser.args.time_stamp, 'executor')
 logFile = os.path.join(logDir, 'log')
 
 
