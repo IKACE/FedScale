@@ -1,4 +1,4 @@
-# Configuration file of reinforcement learning training experiment
+# Configuration file of FAR training experiment
 
 # ========== Cluster configuration ========== 
 # ip address of the parameter server (need 1 GPU process)
@@ -7,8 +7,8 @@ ps_ip: 10.0.0.1
 # ip address of each worker:# of available gpus process on each gpu in this node
 # Note that if we collocate ps and worker on same GPU, then we need to decrease this number of available processes on that GPU by 1
 # E.g., master node has 4 available processes, then 1 for the ps, and worker should be set to: worker:3
-worker_ips: 
-    - 10.0.0.1:[1] # worker_ip: [(# processes on gpu) for gpu in available_gpus] eg. 10.0.0.2:[4,4,4,4] This node has 4 gpus, each gpu has 4 processes. 
+worker_ips:  # worker_ip: [(# processes on gpu) for gpu in available_gpus]
+    - 10.0.0.1:[2]
 
 exp_path: /users/yilegu/fedscale_docker/FedScale/fedscale/core
 
@@ -18,34 +18,36 @@ executor_entry: execution/executor.py
 aggregator_entry: aggregation/aggregator.py
 
 auth:
-    ssh_user: ""
+    # ssh_user: ""
+    ssh_user: "yilegu"
     ssh_private_key: ~/.ssh/id_rsa
 
 # cmd to run before we can indeed run FAR (in order)
 setup_commands:
-    - source /users/yilegu/anaconda3/bin/activate fedscale
-    - export NCCL_SOCKET_IFNAME='enp94s0f0'         # Run "ifconfig" to ensure the right NIC for nccl if you have multiple NICs
+
 
 # ========== Additional job configuration ========== 
 # Default parameters are specified in config_parser.py, wherein more description of the parameter can be found
 
 job_conf: 
-    - job_name: rl                   # Generate logs under this folder: log_path/job_name/time_stamp
+    - job_name: blog                   # Generate logs under this folder: log_path/job_name/time_stamp
     - log_path: /users/yilegu/fedscale_docker/FedScale/benchmark # Path of log files
+    - task: nlp
     - num_participants: 5                      # Number of participants per round, we use K=100 in our paper, large K will be much slower
-    - device_conf_file: /users/yilegu/fedscale_docker/FedScale/benchmark/dataset/data/device_info/client_device_capacity     # Path of the client trace
-    - device_avail_file: /users/yilegu/fedscale_docker/FedScale/benchmark/dataset/data/device_info/client_behave_trace
-    - model: dqn                           # Models: e.g., shufflenet_v2_x2_0, mobilenet_v2, resnet34, albert-base-v2
-    - gradient_policy: yogi                 # {"fed-yogi", "fed-prox", "fed-avg"}, "fed-avg" by default
+    - data_set: blog                     # Dataset: openImg, google_speech, reddit
+    - data_dir: /users/yilegu/benchmark/dataset/data/blog    # Path of the dataset
+    - device_conf_file: /users/yilegu/benchmark/dataset/data/device_info/client_device_capacity     # Path of the client trace
+    - device_avail_file: /users/yilegu/benchmark/dataset/data/device_info/client_behave_trace
+    - model: albert-base-v2                            # Models: e.g., shufflenet_v2_x2_0, mobilenet_v2, resnet34, albert-base-v2
     - eval_interval: 10                     # How many rounds to run a testing on the testing set
     - rounds: 20                          # Number of rounds to run this training. We use 1000 in our paper, while it may converge w/ ~400 rounds
     - filter_less: 21                       # Remove clients w/ less than 21 samples
-    - num_loaders: 2
-    - yogi_eta: 3e-3 
-    - yogi_tau: 1e-8
-    - local_steps: 20
-    - learning_rate: 0.05
+    - num_loaders: 4                        # Dataloaders 
+    - local_steps: 30
+    - learning_rate: 4e-5
+    - min_learning_rate: 1e-5
     - batch_size: 20
-    - task: rl
-    - use_cuda: False
+    - test_bsz: 20
+    - use_cuda: false
+
 
