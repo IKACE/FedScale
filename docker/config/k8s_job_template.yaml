@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+
+kind: Job
+
+metadata:
+
+  name: femnist
+
+spec:
+
+  template:
+
+    spec:
+
+      containers:
+
+      - name: fedscale-aggr
+
+        image: fedscale/fedscale-aggr
+
+        
+
+      restartPolicy: Never
+
+  backoffLimit: 4
+
+

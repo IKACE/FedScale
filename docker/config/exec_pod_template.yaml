@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fedscale-exec-pod
+spec:
+  containers:
+  - name: fedscale-exec
+    image: fedscale/fedscale-exec
+    imagePullPolicy: Always
+    ports:
+    - containerPort: 32000
+    volumeMounts:
+      - mountPath: /FedScale/benchmark
+        name: benchmark
+        readOnly: false
+    # resources:
+    #   requests:
+    #     ephemeral-storage: "15Gi"
+    #   limits:
+    #     ephemeral-storage: "15Gi"
+  volumes:
+  - name: benchmark
+    hostPath:
+      # directory location on host, assume it exists on all nodes
+      path: /users/yilegu/benchmark
+      # this field is optional
+      type: Directory
