@@ -1,26 +1,25 @@
 # Configuration file of FAR training experiment using Aggregator & Executor containers and k8s for container deployment
+### Refer to $FEDSCALE_HOME/docker/README.md for k8s deployment tutorial
 
 # ========== Container configuration ========== 
-# whether to use container deployment
+### k8s-specific: whether to use k8s deployment
 use_container: k8s
 
-# containers need a data-path mount to facilitate dataset reuse
+### docker & k8s: containers need a data-path mount to facilitate dataset reuse
 # We assume the same data-path is used on all host machines
-data_path: /users/yilegu/benchmark
+data_path: $FEDSCALE_HOME/benchmark
 
 # ========== Cluster configuration ========== 
-# k8s-specific
-# number of aggregators, right now we only support a single aggregator
+### k8s-specific: number of aggregators, right now we only support a single aggregator
 # placeholder for supporting hierarchical aggregator in the future
 num_aggregators: 1
 
-# k8s-specific
-# number of executors
+### k8s-specific: number of executors
 num_executors: 2
 
 
 auth:
-    ssh_user: "yilegu"
+    ssh_user: ""
     ssh_private_key: ~/.ssh/id_rsa
 
 # cmd to run before we can indeed run FAR (in order)
@@ -32,7 +31,7 @@ setup_commands:
 
 # We use fixed paths in job_conf as they will be accessed inside containers
 job_conf: 
-    - job_name: femnist_ctnr                   # Generate logs under this folder: log_path/job_name/time_stamp
+    - job_name: femnist_k8s                   # Generate logs under this folder: log_path/job_name/time_stamp
     - log_path: /FedScale/benchmark # Path of log files
     - num_participants: 5                  # Number of participants per round, we use K=100 in our paper, large K will be much slower
     - data_set: femnist                     # Dataset: openImg, google_speech, stackoverflow
