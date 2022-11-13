@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: tensorboard
+  name: tensorboard
+spec:
+  ports:
+  - port: 80
+    targetPort: 6006
+  selector:
+    app: tensorboard
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: tensorboard
+  name: tensorboard
+spec:
+  selector:
+    matchLabels:
+      app: tensorboard
+  template:
+    metadata:
+      labels:
+        app: tensorboard
+    spec:
+      volumes:
+      - hostPath:
+          path: /users/yilegu/FedScale/benchmark
+          type: Directory
+        name: benchmark     
+      containers:
+      - name: tensorboard
+        command: ["/bin/sh", "-c"]
+        args: ["tensorboard --logdir /benchmark/logs/femnist_k8s/1020_221224/aggregator/"]
+        image: tensorflow/tensorflow
+        ports:
+        - containerPort: 6006
+        volumeMounts:
+        - mountPath: "/benchmark"
+          name: benchmark
+          readOnly: false
