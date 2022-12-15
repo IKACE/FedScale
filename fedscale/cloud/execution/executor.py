@@ -351,7 +351,8 @@ class Executor(object):
             client = self.get_client_trainer(conf)
             train_res = client.train(
                 client_data=client_data, model=client_model, conf=conf)
-
+        # TODO: report client privacy budget use here
+        # Ideally I want the client to report just the updated budget, but since there is no living clients in executor, reporting job configs instead
         return train_res
 
     def testing_handler(self, args, config=None):

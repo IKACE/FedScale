@@ -29,6 +29,9 @@ class clientManager(object):
         self.user_trace = None
         self.args = args
 
+        # mapping from client_id to client's privacy accountant
+        self.privacy_context = {}
+
         if args.device_avail_file is not None:
             with open(args.device_avail_file, 'rb') as fin:
                 self.user_trace = pickle.load(fin)
@@ -194,7 +197,17 @@ class clientManager(object):
         logging.info(f"Wall clock time: {round(cur_time)}, {len(clients_online)} clients online, " +
                      f"{len(self.feasibleClients)-len(clients_online)} clients offline")
 
-        return clients_online
+        clients_available = []
+        for clientId in clients_online:
+            if self.Clients[self.getUniqueId(0, clientId)].getRemainingBudget() == 0:
+                logging.info(f'Client {clientId} has used up all its privacy budget, skipping...')
+            else:
+                clients_available.append(clientId)
+
+        logging.info(f"Wall clock time: {round(cur_time)}, {len(clients_online)} clients online, " +
+                     f"{len(clients_available)} clients have available privacy budget.")
+
+        return clients_available
 
     def isClientActive(self, clientId, cur_time):
         return self.Clients[self.getUniqueId(0, clientId)].isActive(cur_time)

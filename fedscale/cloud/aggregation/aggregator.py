@@ -64,7 +64,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
 
         # ======== Event Queue =======
         self.individual_client_events = {}    # Unicast
-        self.sever_events_queue = collections.deque()
+        self.server_events_queue = collections.deque()
         self.broadcast_events_queue = collections.deque()  # Broadcast
 
         # ======== runtime information ========
@@ -415,6 +415,8 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                                           duration=self.virtual_client_clock[results['clientId']]['computation'] +
                                           self.virtual_client_clock[results['clientId']]['communication']
                                           )
+
+        # TODO: update client privacy budget here
 
         # ================== Aggregate weights ======================
         self.update_lock.acquire()
@@ -800,7 +802,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             data (dictionary): Data transferred in grpc communication, could be model parameters, test result.
 
         """
-        self.sever_events_queue.append((client_id, event, meta, data))
+        self.server_events_queue.append((client_id, event, meta, data))
 
     def CLIENT_REGISTER(self, request, context):
         """FL Client register to the aggregator
@@ -935,8 +937,8 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                     break
 
             # Handle events queued on the aggregator
-            elif len(self.sever_events_queue) > 0:
-                client_id, current_event, meta, data = self.sever_events_queue.popleft()
+            elif len(self.server_events_queue) > 0:
+                client_id, current_event, meta, data = self.server_events_queue.popleft()
 
                 if current_event == commons.UPLOAD_MODEL:
                     self.client_completion_handler(

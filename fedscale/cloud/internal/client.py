@@ -1,3 +1,4 @@
+from fedscale.cloud.internal.privacy_accountant import Privacy_Accountant
 
 class Client(object):
 
@@ -9,6 +10,17 @@ class Client(object):
         self.score = 0
         self.traces = traces
         self.behavior_index = 0
+
+        self.privacy_acct = Privacy_Accountant({
+            "eps_budget": 10,
+            "delta": 1e-6,
+        })
+
+    def getRemainingBudget(self):
+        return self.privacy_acct.get_remaining_budget()
+
+    def getPrivacyLoss(self):
+        return self.privacy_acct.get_privacy_loss()
 
     def getScore(self):
         return self.score
