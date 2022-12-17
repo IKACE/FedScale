@@ -116,6 +116,11 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                     "batch_size": args.batch_size,
                     "use_cuda": args.use_cuda
                 })
+                # Define the custom x axis metric
+                self.wandb.define_metric("niter")
+
+                # Define which metrics to plot against that x-axis
+                self.wandb.define_metric("Client/privacy_loss", step_metric='niter')
             else:
                 logging.error("Warning: wandb has already been initialized")
             # self.wandb.run.name = f'{args.job_name}-{args.time_stamp}'
@@ -417,7 +422,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                                           )
 
         # TODO: update client privacy budget here
-
+        self.client_manager.updateClientBudget(results)
         # ================== Aggregate weights ======================
         self.update_lock.acquire()
 

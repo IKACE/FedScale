@@ -49,7 +49,9 @@ class Client(object):
 
         # NOTE: If one may hope to run fixed number of epochs, instead of iterations, 
         # use `while self.completed_steps < conf.local_steps * len(client_data)` instead
+        niter = 0
         while self.completed_steps < conf.local_steps:
+            niter +=1
             try:
                 self.train_step(client_data, conf, model, optimizer, criterion)
             except Exception as ex:
@@ -61,6 +63,9 @@ class Client(object):
                        for p in state_dicts}
         results = {'clientId': clientId, 'moving_loss': self.epoch_train_loss,
                    'trained_size': self.completed_steps*conf.batch_size, 
+                   'sigma': conf.noise_factor, # caution: the real sigma for Gaussian noise is conf.noise_factor*conf.clip_threshold, here the sigma follows from DP-SGD's definition
+                   'sample_rate': conf.batch_size / len(client_data.dataset),
+                   'niter': niter,
                    'success': self.completed_steps == conf.local_steps}
 
         if error_type is None:

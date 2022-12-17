@@ -14,7 +14,7 @@ worker_ips:
 exp_path: $FEDSCALE_HOME
 
 # Entry function of executor and aggregator under $exp_path
-executor_entry: examples/differential_privacy/customized_executor.py
+executor_entry: examples/privacy_accounting/customized_executor.py
 
 aggregator_entry: fedscale/cloud/aggregation/aggregator.py
 
@@ -30,7 +30,7 @@ setup_commands:
 # Default parameters are specified in config_parser.py, wherein more description of the parameter can be found
 
 job_conf:
-    - job_name: local_dp                   # Generate logs under this folder: log_path/job_name/time_stamp
+    - job_name: privacy_acct                   # Generate logs under this folder: log_path/job_name/time_stamp
     - log_path: $FEDSCALE_HOME/benchmark # Path of log files
     - num_participants: 10
     - data_set: femnist                     # Dataset: openImg, google_speech, stackoverflow
@@ -39,7 +39,7 @@ job_conf:
     - sample_mode: random                                  # Client selection: random, oort, random by default
     - model: resnet18                            # Models: shufflenet_v2_x2_0, mobilenet_v2, resnet34, albert-base-v2
     - gradient_policy: fedavg                 # {"fed-yogi", "fed-prox", "fed-avg"}, "fed-avg" by default
-    - eval_interval: 10                     # How many rounds to run a testing on the testing set
+    - eval_interval: 200                     # How many rounds to run a testing on the testing set
     - rounds: 21                          # Number of rounds to run this training. We use 1000 in our paper, while it may converge w/ ~400 rounds
     - filter_less: 20
     # - overcommitment: 1.3
@@ -51,6 +51,6 @@ job_conf:
     - batch_size: 25
     - test_bsz: 5
     - use_cuda: False
-    - noise_factor: 0.01
-    - clip_threshold: 2.0
+    - noise_factor: 0.3
+    - clip_threshold: 2
 

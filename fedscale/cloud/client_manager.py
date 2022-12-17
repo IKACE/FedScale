@@ -199,6 +199,7 @@ class clientManager(object):
 
         clients_available = []
         for clientId in clients_online:
+            logging.info(f"Client {clientId} privacy loss: {self.Clients[self.getUniqueId(0, clientId)].getPrivacyLoss()}/10")
             if self.Clients[self.getUniqueId(0, clientId)].getRemainingBudget() == 0:
                 logging.info(f'Client {clientId} has used up all its privacy budget, skipping...')
             else:
@@ -261,3 +262,7 @@ class clientManager(object):
         if self.mode == 'oort':
             return self.ucbSampler.get_median_reward()
         return 0.
+
+    def updateClientBudget(self, params):
+        clientId = params["clientId"]
+        self.Clients[self.getUniqueId(0, clientId)].updateBudget(params)
