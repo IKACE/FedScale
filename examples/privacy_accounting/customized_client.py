@@ -71,7 +71,7 @@ class Customized_Client(Client):
         for param in model.parameters():
             param.data = last_model_params[idx] + delta_weight[idx]
             idx += 1
-        sigma = conf.noise_factor * conf.clip_threshold
+        sigma = conf.noise_factor
         state_dicts = model.state_dict()
         model_param = {p:  np.asarray(state_dicts[p].data.cpu().numpy() + \
             torch.normal(mean=0, std=sigma, size=state_dicts[p].data.shape).cpu().numpy()) for p in state_dicts}
@@ -81,7 +81,7 @@ class Customized_Client(Client):
                    'trained_size': self.completed_steps*conf.batch_size, 'success': self.completed_steps > 0}
         results['utility'] = math.sqrt(
             self.loss_squre)*float(trained_unique_samples)
-        results['sigma'] = conf.noise_factor
+        results['sigma'] = conf.noise_factor # caution: different than DP-SGD paper, std of Gaussian noise is the same as noise factor here, instead of noise_factor * clip_threshold.
         results['sample_rate'] = conf.batch_size / len(client_data.dataset)
         results['niter'] = conf.local_steps # caution on this
 

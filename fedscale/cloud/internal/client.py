@@ -12,7 +12,7 @@ class Client(object):
         self.behavior_index = 0
 
         self.privacy_acct = Privacy_Accountant({
-            "eps_budget": 10,
+            "eps_budget": 1000,
             "delta": 1e-6,
             "clientId": self.clientId
         })
@@ -22,6 +22,9 @@ class Client(object):
 
     def getPrivacyLoss(self):
         return self.privacy_acct.get_privacy_loss()
+
+    def getTotalBudget(self):
+        return self.privacy_acct.get_total_budget()
 
     def updateBudget(self, params):
         return self.privacy_acct.update_budget(params)

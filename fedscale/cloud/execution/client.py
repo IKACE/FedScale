@@ -61,9 +61,11 @@ class Client(object):
         state_dicts = model.state_dict()
         model_param = {p: state_dicts[p].data.cpu().numpy()
                        for p in state_dicts}
+
+        ### not used when customized client is present
         results = {'clientId': clientId, 'moving_loss': self.epoch_train_loss,
                    'trained_size': self.completed_steps*conf.batch_size, 
-                   'sigma': conf.noise_factor, # caution: the real sigma for Gaussian noise is conf.noise_factor*conf.clip_threshold, here the sigma follows from DP-SGD's definition
+                   'sigma': conf.noise_factor, # caution: different than DP-SGD paper, std of Gaussian noise is the same as noise factor here, instead of noise_factor * clip_threshold.
                    'sample_rate': conf.batch_size / len(client_data.dataset),
                    'niter': niter,
                    'success': self.completed_steps == conf.local_steps}

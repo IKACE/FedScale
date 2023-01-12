@@ -30,6 +30,9 @@ class Privacy_Accountant(object):
         if self.changed:
             self.compute_budget()
         return max(self.eps_budget-self.eps_loss, 0)
+    
+    def get_total_budget(self):
+        return self.eps_budget
 
     def update_budget(self, params):
         """Update privacy budget by updating the mechanisms used in context, do not compute privacy budget here for efficiency

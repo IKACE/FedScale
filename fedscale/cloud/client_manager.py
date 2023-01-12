@@ -189,6 +189,7 @@ class clientManager(object):
 
     def getFeasibleClients(self, cur_time):
         if self.user_trace is None:
+            # logging.info("no trace")
             clients_online = self.feasibleClients
         else:
             clients_online = [clientId for clientId in self.feasibleClients if self.Clients[self.getUniqueId(
@@ -199,9 +200,10 @@ class clientManager(object):
 
         clients_available = []
         for clientId in clients_online:
-            logging.info(f"Client {clientId} privacy loss: {self.Clients[self.getUniqueId(0, clientId)].getPrivacyLoss()}/10")
+            # logging.info(f"Client {clientId} privacy loss: {self.Clients[self.getUniqueId(0, clientId)].getPrivacyLoss()}/10")
             if self.Clients[self.getUniqueId(0, clientId)].getRemainingBudget() == 0:
-                logging.info(f'Client {clientId} has used up all its privacy budget, skipping...')
+                # logging.info(f'Client {clientId} has used up all its privacy budget, skipping...')
+                continue
             else:
                 clients_available.append(clientId)
 
@@ -229,6 +231,7 @@ class clientManager(object):
         clients_online = self.getFeasibleClients(cur_time)
 
         if len(clients_online) <= num_of_clients:
+            # logging.info(f"select_participants: clients_online {clients_online}")
             return clients_online
 
         pickled_clients = None
@@ -241,6 +244,9 @@ class clientManager(object):
             self.rng.shuffle(clients_online)
             client_len = min(num_of_clients, len(clients_online) - 1)
             pickled_clients = clients_online[:client_len]
+
+        for clientId in pickled_clients:
+            logging.info(f"Client {clientId} privacy loss: {self.Clients[self.getUniqueId(0, clientId)].getPrivacyLoss()}/{self.Clients[self.getUniqueId(0, clientId)].getTotalBudget()}")
 
         return pickled_clients
 
