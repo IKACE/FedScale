@@ -5,11 +5,11 @@ import sys
 
 import torch
 
-import fedscale.core.config_parser as parser
-from fedscale.core import commons
-from fedscale.core.aggregation.aggregator import Aggregator
-from fedscale.core.channels import job_api_pb2
-from fedscale.core.logger.aggragation import *
+import fedscale.cloud.config_parser as parser
+from fedscale.cloud import commons
+from fedscale.cloud.aggregation.aggregator import Aggregator
+from fedscale.cloud.channels import job_api_pb2
+from fedscale.cloud.logger.aggragation import *
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from resource_manager import ResourceManager
@@ -83,8 +83,8 @@ class AsyncAggregator(Aggregator):
             end_j = 0
             for client_to_run in sampled_clients:
                 client_cfg = self.client_conf.get(client_to_run, self.args)
-                exe_cost = self.client_manager.getCompletionTime(client_to_run,
-                            batch_size=client_cfg.batch_size, upload_step=client_cfg.local_steps,
+                exe_cost = self.client_manager.get_completion_time(client_to_run,
+                            batch_size=client_cfg.batch_size, local_steps=client_cfg.local_steps,
                             upload_size=self.model_update_size, download_size=self.model_update_size)
 
                 roundDuration = exe_cost['computation'] + \
@@ -155,7 +155,7 @@ class AsyncAggregator(Aggregator):
         self.importance_sum += importance
 
         for p in results['update_weight']:
-            # Different to core/executor, update_weight here is (train_model_weight - untrained)
+            # Different to cloud/executor, update_weight here is (train_model_weight - untrained)
             param_weight = results['update_weight'][p]
 
             if isinstance(param_weight, list):

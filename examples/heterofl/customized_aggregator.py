@@ -5,9 +5,9 @@ import config
 import customized_fllibs
 from customized_fllibs import make_param_idx
 
-import fedscale.core.config_parser as parser
-from fedscale.core.aggregation.aggregator import Aggregator
-from fedscale.core.logger.aggragation import *
+import fedscale.cloud.config_parser as parser
+from fedscale.cloud.aggregation.aggregator import Aggregator
+from fedscale.cloud.logger.aggragation import *
 
 
 class Customized_Aggregator(Aggregator):
@@ -28,8 +28,8 @@ class Customized_Aggregator(Aggregator):
         for client_to_run in sampled_clients:
             client_cfg = self.client_conf.get(client_to_run, self.args)
 
-            exe_cost = self.client_manager.getCompletionTime(client_to_run,
-                                    batch_size=client_cfg.batch_size, upload_step=client_cfg.local_steps,
+            exe_cost = self.client_manager.get_completion_time(client_to_run,
+                                    batch_size=client_cfg.batch_size, local_steps=client_cfg.local_steps,
                                     upload_size=self.model_update_size, download_size=self.model_update_size)
 
             roundDuration = exe_cost['computation'] + exe_cost['communication']
