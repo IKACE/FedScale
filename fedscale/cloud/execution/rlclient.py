@@ -5,7 +5,8 @@ from fedscale.cloud.execution.client import Client
 from fedscale.cloud.execution.optimizers import ClientOptimizer
 
 import fedscale.cloud.config_parser as parser
-if parser.args.task == 'rl':
+
+if parser.args.task == "rl":
     from fedscale.dataloaders.dqn import *
 
 
@@ -27,7 +28,7 @@ class RLClient(Client):
         # self.dqn.target_net = self.dqn.target_net.to(device=device)
         global_model = None
 
-        if conf.gradient_policy == 'prox':
+        if conf.gradient_policy == "prox":
             # could be move to optimizer
             global_model = [param.data.clone() for param in model.parameters()]
 
@@ -45,10 +46,12 @@ class RLClient(Client):
                     a = self.dqn.choose_action(s)
                     s_, r, done, info = client_data.env.step(a)
                     x, x_dot, theta, theta_dot = s_
-                    r1 = (client_data.env.x_threshold - abs(x)) / \
-                        client_data.env.x_threshold - 0.8
-                    r2 = (client_data.env.theta_threshold_radians - abs(theta)
-                          ) / client_data.env.theta_threshold_radians - 0.5
+                    r1 = (
+                        client_data.env.x_threshold - abs(x)
+                    ) / client_data.env.x_threshold - 0.8
+                    r2 = (
+                        client_data.env.theta_threshold_radians - abs(theta)
+                    ) / client_data.env.theta_threshold_radians - 0.5
                     new_r = r1 + r2
                     self.dqn.store_transition(s, a, new_r, s_)
                     episode_reward_sum += new_r
@@ -57,14 +60,16 @@ class RLClient(Client):
                         loss = self.dqn.learn()
                         loss_list = [loss.tolist()]
                         loss = loss.mean()
-                        temp_loss = sum([l**2 for l in loss_list]
-                                        )/float(len(loss_list))
+                        temp_loss = sum([l**2 for l in loss_list]) / float(
+                            len(loss_list)
+                        )
 
                         if epoch_train_loss == 1e-4:
                             epoch_train_loss = temp_loss
                         else:
                             epoch_train_loss = (
-                                1. - conf.loss_decay) * epoch_train_loss + conf.loss_decay * temp_loss
+                                1.0 - conf.loss_decay
+                            ) * epoch_train_loss + conf.loss_decay * temp_loss
 
                         completed_steps += 1
 
@@ -76,20 +81,22 @@ class RLClient(Client):
                 break
 
         model.load_state_dict(self.dqn.target_net.state_dict())
-        model_param = [param.data.cpu().numpy()
-                       for param in model.parameters()]
-        results = {'clientId': clientId, 'moving_loss': epoch_train_loss,
-                   'trained_size': completed_steps*conf.batch_size, 'success': completed_steps > 0}
-        results['utility'] = math.sqrt(
-            epoch_train_loss)*float(trained_unique_samples)
+        model_param = [param.data.cpu().numpy() for param in model.parameters()]
+        results = {
+            "clientId": clientId,
+            "moving_loss": epoch_train_loss,
+            "trained_size": completed_steps * conf.batch_size,
+            "success": completed_steps > 0,
+        }
+        results["utility"] = math.sqrt(epoch_train_loss) * float(trained_unique_samples)
 
         if error_type is None:
             logging.info(f"Training of (CLIENT: {clientId}) completes, {results}")
         else:
             logging.info(f"Training of (CLIENT: {clientId}) failed as {error_type}")
 
-        results['update_weight'] = model_param
-        results['wall_duration'] = 0
+        results["update_weight"] = model_param
+        results["wall_duration"] = 0
 
         return results
 
@@ -97,7 +104,7 @@ class RLClient(Client):
         model = model.to(device=device)
         self.dqn.target_net.load_state_dict(model.state_dict())
         self.dqn.set_eval_mode()
-        env = gym.make('CartPole-v0').unwrapped
+        env = gym.make("CartPole-v0").unwrapped
         reward_sum = 0
         test_loss = 0
         s = env.reset()
@@ -106,8 +113,9 @@ class RLClient(Client):
             s_, r, done, info = env.step(a)
             x, x_dot, theta, theta_dot = s_
             r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
-            r2 = (env.theta_threshold_radians - abs(theta)) / \
-                env.theta_threshold_radians - 0.5
+            r2 = (
+                env.theta_threshold_radians - abs(theta)
+            ) / env.theta_threshold_radians - 0.5
             new_r = r1 + r2
             self.dqn.store_transition(s, a, new_r, s_)
             reward_sum += new_r
@@ -117,6 +125,19 @@ class RLClient(Client):
 
             if done:
                 break
-        logging.info('Rank {}: Test set: Average loss: {}, Reward: {}'
-                     .format(rank, test_loss, reward_sum))
-        return 0, 0, 0, {'top_1': reward_sum, 'top_5': reward_sum, 'test_loss': test_loss, 'test_len': 1}
+        logging.info(
+            "Rank {}: Test set: Average loss: {}, Reward: {}".format(
+                rank, test_loss, reward_sum
+            )
+        )
+        return (
+            0,
+            0,
+            0,
+            {
+                "top_1": reward_sum,
+                "top_5": reward_sum,
+                "test_loss": test_loss,
+                "test_len": 1,
+            },
+        )

@@ -30,16 +30,17 @@ class ResourceManager(object):
         return remaining_task_num
 
     def remove_client_task(self, client_id):
-        assert(client_id in self.client_run_queue,
-               f"client task {client_id} is not in task queue")
+        assert (
+            client_id in self.client_run_queue,
+            f"client task {client_id} is not in task queue",
+        )
         pass
 
     def has_next_task(self, client_id=None):
         # TODO: always has next task
         exist_next_task = False
         if self.experiment_mode == commons.SIMULATION_MODE:
-            exist_next_task = self.client_run_queue_idx < len(
-                self.client_run_queue)
+            exist_next_task = self.client_run_queue_idx < len(self.client_run_queue)
         else:
             exist_next_task = client_id in self.client_run_queue
         return exist_next_task

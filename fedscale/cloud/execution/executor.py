@@ -24,13 +24,13 @@ class Executor(object):
         args (dictionary): Variable arguments for fedscale runtime config. defaults to the setup in arg_parser.py
 
     """
+
     def __init__(self, args):
         # initiate the executor log path, and executor ips
         logger.initiate_client_setting()
 
         self.args = args
-        self.device = args.cuda_device if args.use_cuda else torch.device(
-            'cpu')
+        self.device = args.cuda_device if args.use_cuda else torch.device("cpu")
         self.num_executors = args.num_executors
         # ======== env information ========
         self.this_rank = args.this_rank
@@ -39,11 +39,11 @@ class Executor(object):
         # ======== model and data ========
         self.training_sets = self.test_dataset = None
         self.temp_model_path = os.path.join(
-            logger.logDir, 'model_'+str(args.this_rank)+'.pth.tar')
+            logger.logDir, "model_" + str(args.this_rank) + ".pth.tar"
+        )
 
         # ======== channels ========
-        self.aggregator_communicator = ClientConnections(
-            args.ps_ip, args.ps_port)
+        self.aggregator_communicator = ClientConnections(args.ps_ip, args.ps_port)
 
         # ======== runtime information ========
         self.collate_fn = None
@@ -56,14 +56,12 @@ class Executor(object):
         super(Executor, self).__init__()
 
     def setup_env(self):
-        """Set up experiments environment
-        """
+        """Set up experiments environment"""
         logging.info(f"(EXECUTOR:{self.this_rank}) is setting up environ ...")
         self.setup_seed(seed=1)
 
     def setup_communication(self):
-        """Set up grpc connection
-        """
+        """Set up grpc connection"""
         self.init_control_communication()
         self.init_data_communication()
 
@@ -87,18 +85,19 @@ class Executor(object):
         self.aggregator_communicator.connect_to_server()
 
     def init_data_communication(self):
-        """In charge of jumbo data traffics (e.g., fetch training result)
-        """
+        """In charge of jumbo data traffics (e.g., fetch training result)"""
         pass
 
     def init_model(self):
         """Get the model architecture used in training
 
-        Returns: 
+        Returns:
             PyTorch or TensorFlow module: Based on the executor's machine learning framework, initialize and return the model for training
-        
+
         """
-        assert self.args.engine == commons.PYTORCH, "Please override this function to define non-PyTorch models"
+        assert (
+            self.args.engine == commons.PYTORCH
+        ), "Please override this function to define non-PyTorch models"
         model = init_model()
         model = model.to(device=self.device)
         return model
@@ -117,26 +116,32 @@ class Executor(object):
         logging.info("Data partitioner starts ...")
 
         training_sets = DataPartitioner(
-            data=train_dataset, args=self.args, numOfClass=self.args.num_class)
+            data=train_dataset, args=self.args, numOfClass=self.args.num_class
+        )
         training_sets.partition_data_helper(
-            num_clients=self.args.num_participants, data_map_file=self.args.data_map_file)
+            num_clients=self.args.num_participants,
+            data_map_file=self.args.data_map_file,
+        )
 
         testing_sets = DataPartitioner(
-            data=test_dataset, args=self.args, numOfClass=self.args.num_class, isTest=True)
+            data=test_dataset,
+            args=self.args,
+            numOfClass=self.args.num_class,
+            isTest=True,
+        )
         testing_sets.partition_data_helper(num_clients=self.num_executors)
 
         logging.info("Data partitioner completes ...")
 
-        if self.task == 'nlp':
+        if self.task == "nlp":
             self.collate_fn = collate
-        elif self.task == 'voice':
+        elif self.task == "voice":
             self.collate_fn = voice_collate_fn
 
         return training_sets, testing_sets
 
     def run(self):
-        """Start running the executor by setting up execution and communication environment, and monitoring the grpc message.
-        """
+        """Start running the executor by setting up execution and communication environment, and monitoring the grpc message."""
         self.setup_env()
         self.training_sets, self.testing_sets = self.init_data()
         self.setup_communication()
@@ -144,10 +149,10 @@ class Executor(object):
 
     def dispatch_worker_events(self, request):
         """Add new events to worker queues
-        
+
         Args:
             request (string): Add grpc request from server (e.g. MODEL_TEST, MODEL_TRAIN) to event_queue.
-        
+
         """
         self.event_queue.append(request)
 
@@ -159,7 +164,7 @@ class Executor(object):
 
         Returns:
             ServerResponse defined at job_api.proto: The deserialized response object from server.
-        
+
         """
         return pickle.loads(responses)
 
@@ -171,7 +176,7 @@ class Executor(object):
 
         Returns:
             bytes stream: The serialized response object to server.
-        
+
         """
         return pickle.dumps(responses)
 
@@ -180,7 +185,7 @@ class Executor(object):
 
         Args:
             config (PyTorch or TensorFlow model): The broadcasted global model config
-        
+
         """
         self.update_model_handler(model=config)
 
@@ -190,26 +195,31 @@ class Executor(object):
         Args:
             config (dictionary): The client training config.
 
-        Returns:     
+        Returns:
             tuple (int, dictionary): The client id and train result
 
         """
-        client_id, train_config = config['client_id'], config['task_config']
+        client_id, train_config = config["client_id"], config["task_config"]
 
         model = None
-        if 'model' in config and config['model'] is not None:
-            model = config['model']
+        if "model" in config and config["model"] is not None:
+            model = config["model"]
 
         client_conf = self.override_conf(train_config)
         train_res = self.training_handler(
-            clientId=client_id, conf=client_conf, model=model)
+            clientId=client_id, conf=client_conf, model=model
+        )
 
         # Report execution completion meta information
         response = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION(
             job_api_pb2.CompleteRequest(
-                client_id=str(client_id), executor_id=self.executor_id,
-                event=commons.CLIENT_TRAIN, status=True, msg=None,
-                meta_result=None, data_result=None
+                client_id=str(client_id),
+                executor_id=self.executor_id,
+                event=commons.CLIENT_TRAIN,
+                status=True,
+                msg=None,
+                meta_result=None,
+                data_result=None,
             )
         )
         self.dispatch_worker_events(response)
@@ -218,27 +228,30 @@ class Executor(object):
 
     def Test(self, config):
         """Model Testing. By default, we test the accuracy on all data of clients in the test group
-        
+
         Args:
             config (dictionary): The client testing config.
-        
+
         """
         test_res = self.testing_handler(args=self.args, config=config)
-        test_res = {'executorId': self.this_rank, 'results': test_res}
+        test_res = {"executorId": self.this_rank, "results": test_res}
 
         # Report execution completion information
         response = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION(
             job_api_pb2.CompleteRequest(
-                client_id=self.executor_id, executor_id=self.executor_id,
-                event=commons.MODEL_TEST, status=True, msg=None,
-                meta_result=None, data_result=self.serialize_response(test_res)
+                client_id=self.executor_id,
+                executor_id=self.executor_id,
+                event=commons.MODEL_TEST,
+                status=True,
+                msg=None,
+                meta_result=None,
+                data_result=self.serialize_response(test_res),
             )
         )
         self.dispatch_worker_events(response)
 
     def Stop(self):
-        """Stop the current executor
-        """
+        """Stop the current executor"""
         self.aggregator_communicator.close_sever_connection()
         self.received_stop_request = True
 
@@ -261,22 +274,22 @@ class Executor(object):
         self.round += 1
 
         # Dump latest model to disk
-        with open(self.temp_model_path, 'wb') as model_out:
+        with open(self.temp_model_path, "wb") as model_out:
             pickle.dump(model, model_out)
 
     def load_global_model(self):
-        """ Load last global model
+        """Load last global model
 
         Returns:
             PyTorch or TensorFlow model: The lastest global model
 
         """
-        with open(self.temp_model_path, 'rb') as model_in:
+        with open(self.temp_model_path, "rb") as model_in:
             model = pickle.load(model_in)
         return model
 
     def override_conf(self, config):
-        """ Override the variable arguments for different client
+        """Override the variable arguments for different client
 
         Args:
             config (dictionary): The client runtime config.
@@ -306,14 +319,14 @@ class Executor(object):
 
     def training_handler(self, clientId, conf, model=None):
         """Train model given client id
-        
+
         Args:
             clientId (int): The client id.
             conf (dictionary): The client runtime config.
 
         Returns:
             dictionary: The train result
-        
+
         """
         # load last global model
         client_model = self.load_global_model() if model is None else model
@@ -324,22 +337,27 @@ class Executor(object):
             client_data = self.training_sets
             client = RLClient(conf)
             train_res = client.train(
-                client_data=client_data, model=client_model, conf=conf)
+                client_data=client_data, model=client_model, conf=conf
+            )
         else:
-            client_data = select_dataset(clientId, self.training_sets,
-                                         batch_size=conf.batch_size, args=self.args,
-                                         collate_fn=self.collate_fn
-                                         )
+            client_data = select_dataset(
+                clientId,
+                self.training_sets,
+                batch_size=conf.batch_size,
+                args=self.args,
+                collate_fn=self.collate_fn,
+            )
 
             client = self.get_client_trainer(conf)
             train_res = client.train(
-                client_data=client_data, model=client_model, conf=conf)
+                client_data=client_data, model=client_model, conf=conf
+            )
 
         return train_res
 
     def testing_handler(self, args, config=None):
         """Test model
-        
+
         Args:
             args (dictionary): Variable arguments for fedscale runtime config. defaults to the setup in arg_parser.py
             config (dictionary): Variable arguments from coordinator.
@@ -350,38 +368,57 @@ class Executor(object):
         evalStart = time.time()
         device = self.device
         model = self.load_global_model()
-        if self.task == 'rl':
+        if self.task == "rl":
             client = RLClient(args)
             test_res = client.test(args, self.this_rank, model, device=device)
             _, _, _, testResults = test_res
         else:
-            data_loader = select_dataset(self.this_rank, self.testing_sets,
-                                         batch_size=args.test_bsz, args=args,
-                                         isTest=True, collate_fn=self.collate_fn
-                                         )
+            data_loader = select_dataset(
+                self.this_rank,
+                self.testing_sets,
+                batch_size=args.test_bsz,
+                args=args,
+                isTest=True,
+                collate_fn=self.collate_fn,
+            )
 
-            if self.task == 'voice':
-                criterion = CTCLoss(reduction='mean').to(device=device)
+            if self.task == "voice":
+                criterion = CTCLoss(reduction="mean").to(device=device)
             else:
                 criterion = torch.nn.CrossEntropyLoss().to(device=device)
 
             if self.args.engine == commons.PYTORCH:
-                test_res = test_model(self.this_rank, model, data_loader,
-                                      device=device, criterion=criterion, tokenizer=tokenizer)
+                test_res = test_model(
+                    self.this_rank,
+                    model,
+                    data_loader,
+                    device=device,
+                    criterion=criterion,
+                    tokenizer=tokenizer,
+                )
             else:
-                raise Exception(f"Need customized implementation for model testing in {self.args.engine} engine")
+                raise Exception(
+                    f"Need customized implementation for model testing in {self.args.engine} engine"
+                )
 
             test_loss, acc, acc_5, testResults = test_res
-            logging.info("After aggregation round {}, CumulTime {}, eval_time {}, test_loss {}, test_accuracy {:.2f}%, test_5_accuracy {:.2f}% \n"
-                         .format(self.round, round(time.time() - self.start_run_time, 4), round(time.time() - evalStart, 4), test_loss, acc*100., acc_5*100.))
+            logging.info(
+                "After aggregation round {}, CumulTime {}, eval_time {}, test_loss {}, test_accuracy {:.2f}%, test_5_accuracy {:.2f}% \n".format(
+                    self.round,
+                    round(time.time() - self.start_run_time, 4),
+                    round(time.time() - evalStart, 4),
+                    test_loss,
+                    acc * 100.0,
+                    acc_5 * 100.0,
+                )
+            )
 
         gc.collect()
 
         return testResults
 
     def client_register(self):
-        """Register the executor information to the aggregator
-        """
+        """Register the executor information to the aggregator"""
         start_time = time.time()
         while time.time() - start_time < 180:
             try:
@@ -390,27 +427,29 @@ class Executor(object):
                         client_id=self.executor_id,
                         executor_id=self.executor_id,
                         executor_info=self.serialize_response(
-                            self.report_executor_info_handler())
+                            self.report_executor_info_handler()
+                        ),
                     )
                 )
                 self.dispatch_worker_events(response)
                 break
             except Exception as e:
-                logging.warning(f"Failed to connect to aggregator {e}. Will retry in 5 sec.")
+                logging.warning(
+                    f"Failed to connect to aggregator {e}. Will retry in 5 sec."
+                )
                 time.sleep(5)
 
     def client_ping(self):
-        """Ping the aggregator for new task
-        """
-        response = self.aggregator_communicator.stub.CLIENT_PING(job_api_pb2.PingRequest(
-            client_id=self.executor_id,
-            executor_id=self.executor_id
-        ))
+        """Ping the aggregator for new task"""
+        response = self.aggregator_communicator.stub.CLIENT_PING(
+            job_api_pb2.PingRequest(
+                client_id=self.executor_id, executor_id=self.executor_id
+            )
+        )
         self.dispatch_worker_events(response)
 
     def event_monitor(self):
-        """Activate event handler once receiving new message
-        """
+        """Activate event handler once receiving new message"""
         logging.info("Start monitoring events ...")
         self.client_register()
 
@@ -422,17 +461,27 @@ class Executor(object):
                 if current_event == commons.CLIENT_TRAIN:
                     train_config = self.deserialize_response(request.meta)
                     train_model = self.deserialize_response(request.data)
-                    train_config['model'] = train_model
-                    train_config['client_id'] = int(train_config['client_id'])
+                    train_config["model"] = train_model
+                    train_config["client_id"] = int(train_config["client_id"])
                     client_id, train_res = self.Train(train_config)
 
                     # Upload model updates
                     future_call = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION.future(
-                        job_api_pb2.CompleteRequest(client_id=str(client_id), executor_id=self.executor_id,
-                                                    event=commons.UPLOAD_MODEL, status=True, msg=None,
-                                                    meta_result=None, data_result=self.serialize_response(train_res)
-                                                    ))
-                    future_call.add_done_callback(lambda _response: self.dispatch_worker_events(_response.result()))
+                        job_api_pb2.CompleteRequest(
+                            client_id=str(client_id),
+                            executor_id=self.executor_id,
+                            event=commons.UPLOAD_MODEL,
+                            status=True,
+                            msg=None,
+                            meta_result=None,
+                            data_result=self.serialize_response(train_res),
+                        )
+                    )
+                    future_call.add_done_callback(
+                        lambda _response: self.dispatch_worker_events(
+                            _response.result()
+                        )
+                    )
 
                 elif current_event == commons.MODEL_TEST:
                     self.Test(self.deserialize_response(request.meta))
@@ -451,7 +500,9 @@ class Executor(object):
                 try:
                     self.client_ping()
                 except Exception as e:
-                    logging.info(f"Caught exception {e} from aggregator, terminating executor {self.this_rank} ...")
+                    logging.info(
+                        f"Caught exception {e} from aggregator, terminating executor {self.this_rank} ..."
+                    )
                     break
 
 
